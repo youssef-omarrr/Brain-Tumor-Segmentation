@@ -1,2 +1,2 @@
 # Still in searching phase
-> The project in mind it to learn semantic segmentation
+> The project's goal is to learn semantic segmentation
