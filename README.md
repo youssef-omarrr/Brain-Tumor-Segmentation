@@ -15,7 +15,6 @@ This project uses the [Brain Tumor Segmentation](https://www.kaggle.com/datasets
 
 The dataset contains 3064 pairs of MRI brain images and their respective binary mask indicating tumor.
 
-This dataset is the [Figshare Brain Tumor dataset](https://figshare.com/articles/dataset/brain_tumor_dataset/1512427).
 
 ## Usage
 
