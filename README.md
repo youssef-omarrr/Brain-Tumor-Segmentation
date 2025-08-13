@@ -46,13 +46,14 @@ Sample segmentation results show that the model can effectively capture tumor bo
 
 This project has successfully demonstrated a baseline U-Net model for brain tumor segmentation. While the project is not currently under active development, the following areas were identified as the next steps for optimization and fine-tuning:
 
-* **Improve Boundary Precision**: The current model correctly identifies tumor locations but tends to over-segment the area. Future work would focus on refining the loss function (e.g., adding a boundary loss) or model architecture to produce tighter, more accurate segmentation masks.
-* **Experiment with Pretrained Models**: Evaluate and fine-tune other established segmentation models to benchmark performance against the current U-Net baseline:
+- [ ] **Improve Boundary Precision**: The current model correctly identifies tumor locations but tends to over-segment the area. Future work would focus on refining the loss function (e.g., adding a boundary loss) or model architecture to produce tighter, more accurate segmentation masks.
+- [ ] **Deploy** the model on HuggingFace.
+- [ ] **Experiment with Pretrained Models**: Evaluate and fine-tune other established segmentation models to benchmark performance against the current U-Net baseline:
   * [DeepLabV3](https://docs.pytorch.org/vision/main/models/deeplabv3.html): Leverages atrous convolutions to capture multi-scale context.
   * [FCN (Fully Convolutional Network)](https://docs.pytorch.org/vision/main/models/fcn.html): A foundational architecture for semantic segmentation.
   * [LR-ASPP (Lite R-ASPP)](https://docs.pytorch.org/vision/main/models/lraspp.html): A lightweight and efficient model designed for speed.
-* **Experiment with Advanced Architectures**: Explore deeper or more complex models like **Swin-UNet** or **Attention U-Net**.
-* **Transition to 3D Data**: Apply the 2D model approach to **sliced 3D volumetric datasets** (like the full BraTS dataset) for improved training data diversity and context.
-* **Cross-Dataset Validation**: Conduct validation on different datasets to assess and improve the model's generalization capabilities.
+- [ ] **Experiment with Advanced Architectures**: Explore deeper or more complex models like **Swin-UNet** or **Attention U-Net**.
+- [ ] **Transition to 3D Data**: Apply the 2D model approach to **sliced 3D volumetric datasets** (like the full BraTS dataset) for improved training data diversity and context.
+- [ ] **Cross-Dataset Validation**: Conduct validation on different datasets to assess and improve the model's generalization capabilities.
 
 ---
