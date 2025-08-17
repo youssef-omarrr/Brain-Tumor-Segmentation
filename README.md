@@ -48,10 +48,10 @@ Main steps:
 4. Evaluation — computing Dice and visualizing predictions.
 
 ## Results (placeholders for v2)
-- Final Validation Accuracy:
-- Best Dice Coefficient:
+- Final Validation Accuracy: 93.67%
+- Best Dice Coefficient: 0.2617
 
-(These fields will be filled once v2 training and evaluation are completed.)
+> NOTE: In medical imaging, the feature of interest (the tumor) is often a very small percentage of the total image. A model that learns to predict everything as "background" can achieve very high pixel-wise accuracy (e.g., 98%) while completely failing at the actual task. This is why the Dice score is so important—it specifically measures the overlap of the predicted tumor with the real one.
 
 ## Results from v1 (historical)
 - **Final Validation Accuracy:** 90.81%

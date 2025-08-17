@@ -1,7 +1,7 @@
 from tqdm import tqdm
+import torch.nn.functional as F
 import torch
 import os
-import contextlib
 
 # ======================================================================================
 # 1. DEFINE THE TRAINING FUNCTION FOR ONE EPOCH
@@ -51,15 +51,15 @@ def train_one_epoch(model,
 
         # Use AMP only when on CUDA and scaler provided
         if use_amp and scaler is not None:
-            with torch.amp.autocast(enabled=True):
-                logits = model(imgs)
+            with torch.amp.autocast(enabled=True, device_type="cuda" if torch.cuda.is_available() else "cpu"):
+                logits = model(imgs)['out']
                 loss = loss_fn(logits, gts)
             scaler.scale(loss).backward()
             scaler.step(optimizer)
             scaler.update()
         else:
             # Standard FP32 path (CPU or no scaler)
-            logits = model(imgs)
+            logits = model(imgs)['out']
             loss = loss_fn(logits, gts)
             loss.backward()
             optimizer.step()
@@ -74,15 +74,17 @@ def train_one_epoch(model,
 # 2. DEFINE THE EVALUATION FUNCTION
 # ======================================================================================
 def evaluate(model, 
-            loader, 
-            device, 
-            epoch_num):
+             loader,
+             metric,
+             device,
+             epoch_num):
     """
     Evaluates the model on the validation set.
     
     Args:
         model (torch.nn.Module): The model to be evaluated.
         loader (DataLoader): The DataLoader for the validation data.
+        metric (monai.metrics.DiceMetric): The MONAI metric to compute the Dice score.
         device (torch.device): The device to evaluate on.
         epoch_num (int): The current epoch number, for logging.
         
@@ -93,11 +95,13 @@ def evaluate(model,
     # 1. Set the model to evaluation mode
     # This disables layers like Dropout and ensures BatchNorm uses running stats.
     model.eval()
-    val_dice_scores = []
+    metric.reset()  # Reset the metric at the start of each evaluation
     val_acc = []
     progress_bar = tqdm(loader, desc=f"Validation E-{epoch_num}")
+    
 
     use_amp = (device is not None and getattr(device, "type", None) == "cuda")
+    
     with torch.inference_mode():
         for batch_data in progress_bar:
             if isinstance(batch_data, dict):
@@ -107,33 +111,57 @@ def evaluate(model,
                 test_img, test_gts = batch_data
 
             test_img = test_img.to(device, non_blocking=True)
-            test_gts = test_gts.to(device, non_blocking=True)
+            test_gts = test_gts.to(device, non_blocking=True) # shape (B,1,H,W)
 
-            # AMP only on CUDA
+            # forward
             if use_amp:
-                with torch.amp.autocast(enabled=True):
-                    test_outputs = model(test_img)
+                with torch.amp.autocast(enabled=True, device_type="cuda" if torch.cuda.is_available() else "cpu"):
+                    logits = model(test_img)['out'] # (B,2,H,W)
             else:
-                test_outputs = model(test_img)
+                logits = model(test_img)['out']
 
-            preds = (torch.sigmoid(test_outputs) > 0.5).float()
-            test_gts = (test_gts > 0.5).float()
 
-            intersection = (preds * test_gts).sum(dim=(1, 2, 3))
-            union = preds.sum(dim=(1, 2, 3)) + test_gts.sum(dim=(1, 2, 3))
-            dice_per_image = (2.0 * intersection + 1e-6) / (union + 1e-6)
-            batch_dice = dice_per_image.mean().item()
+            # -----------------------
+            # explicit, robust post-processing
+            # -----------------------
+            # predictions: (B,H,W) indices
+            preds_idx = torch.argmax(logits, dim=1)                # (B,H,W)
 
-            correct_pixels = (preds == test_gts).sum()
-            total_pixels = test_gts.numel()
+            # labels: squeeze channel if present -> (B,H,W)
+            labels_idx = test_gts.squeeze(1).long().to(device)     # (B,H,W)
+
+
+            # if labels accidentally use 255 or other values: normalize
+            if torch.max(labels_idx) > 1:
+                labels_idx = (labels_idx > 0).long()
+
+            num_classes = logits.shape[1]                         # 2
+
+            # one-hot: (B, H, W, C) -> permute -> (B, C, H, W)
+            pred_onehot = F.one_hot(preds_idx.long(), num_classes=num_classes).permute(0, 3, 1, 2).float()
+            label_onehot = F.one_hot(labels_idx.long(), num_classes=num_classes).permute(0, 3, 1, 2).float()
+
+            # update metric (MONAI expects float one-hot tensors shaped (B,C,H,W))
+            metric(y_pred=pred_onehot, y=label_onehot)
+
+            # pixel accuracy
+            correct_pixels = (preds_idx == labels_idx).sum()
+            total_pixels = labels_idx.numel()
             batch_accuracy = (correct_pixels / total_pixels).item()
-
-            val_dice_scores.append(batch_dice)
             val_acc.append(batch_accuracy)
-            progress_bar.set_postfix(dice=batch_dice, acc=batch_accuracy)
+            progress_bar.set_postfix(acc=batch_accuracy)
 
-    mean_dice = sum(val_dice_scores) / len(val_dice_scores)
-    mean_accuracy = sum(val_acc) / len(val_acc)
+        # end loop
+        
+    # print("logits", logits.shape, "preds_idx unique:", torch.unique(preds_idx))
+    # print("labels", labels_idx.shape, "labels unique:", torch.unique(labels_idx))
+    # print("pred_onehot sum per class:", pred_onehot.sum(dim=[0,2,3]))
+    # print("label_onehot sum per class:", label_onehot.sum(dim=[0,2,3]))
+
+    mean_dice = metric.aggregate().item()  # scalar
+    metric.reset()
+    mean_accuracy = sum(val_acc) / len(val_acc) if len(val_acc) > 0 else 0.0
+
     return mean_dice, mean_accuracy
 
 
@@ -144,6 +172,7 @@ def train(model,
         train_loader,
         test_loader,
         loss_fn,
+        metric,
         optimizer,
         scheduler,
         scaler,
@@ -160,6 +189,7 @@ def train(model,
         test_loader (DataLoader): DataLoader for the validation data.
         
         loss_fn: The loss function.
+        metric (monai.metrics.DiceMetric): The metric for evaluation.
         optimizer (torch.optim.Optimizer): The optimizer for updating weights.
         scheduler (torch.optim.lr_scheduler._LRScheduler): Learning rate scheduler.
         
@@ -200,6 +230,7 @@ def train(model,
         # This assesses the model's performance on unseen data.
         val_dice, val_acc = evaluate(model,
                                      test_loader,
+                                     metric,
                                      device,
                                      epoch)
         
@@ -238,7 +269,7 @@ def train(model,
         print(f"  Validation Acc:    {val_acc*100:.2f}%")
         if checkpoint_path:
             print(f"  Checkpoint saved:  {checkpoint_path}")
-        print("=" * (35 + len(str(epoch)) + len(str(epochs))))
+        print("=" * (55 + len(str(epoch)) + len(str(epochs))))
 
     # 8. Final message when training is complete
     print("\nTraining finished!")
