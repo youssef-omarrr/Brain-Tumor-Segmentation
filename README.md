@@ -5,6 +5,8 @@ This project focuses on developing a **deep learning model** for semantic segmen
 ### Announcement — Version 2 (v2)
 This repository now includes a second version (v2) of the segmentation pipeline. v2 focuses on transfer-learning with DeepLabV3 (ResNet-50) and pipeline improvements (see "What's new in v2" below). Work continues iteratively; training metrics for v2 will be populated here after experiments complete.
 
+> The output is still not satisfying, but I’ll work on improving it further in the future.
+
 ### Sample Output
 ![alt text](image.png)
 
@@ -70,7 +72,8 @@ This project has demonstrated baseline segmentation approaches. Next steps and i
 - [ ] Explore advanced architectures like Swin-UNet or Attention U-Net.
 
 - [ ] Cross-dataset validation to evaluate generalization.
-~~- [ ] Extend to 3D volumetric data (full BraTS 3D volumes).~~
+  
+- [ ] ~~Extend to 3D volumetric data (full BraTS 3D volumes)~~.
 
 
 ---
