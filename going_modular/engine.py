@@ -1,11 +1,18 @@
 from tqdm import tqdm
 import torch
 import os
+import contextlib
 
 # ======================================================================================
 # 1. DEFINE THE TRAINING FUNCTION FOR ONE EPOCH
 # ======================================================================================
-def train_one_epoch(model, loader, optimizer, loss_fn, scaler, device, epoch_num):
+def train_one_epoch(model, 
+                    loader, 
+                    optimizer, 
+                    loss_fn, 
+                    scaler, 
+                    device, 
+                    epoch_num):
     """
     Performs one full training epoch.
     
@@ -24,45 +31,52 @@ def train_one_epoch(model, loader, optimizer, loss_fn, scaler, device, epoch_num
     # 1. Set the model to training mode
     # This enables features like dropout and batch normalization to work correctly during training.
     model.train()
-    
-    # 2. Initialize epoch loss and create a progress bar for the loader
     epoch_loss = 0.0
     progress_bar = tqdm(loader, desc=f"Train E-{epoch_num}")
-    
-    # 3. Iterate over each batch in the training data
+
+    use_amp = (device is not None and getattr(device, "type", None) == "cuda")
     for batch in progress_bar:
-        # 3.1. Move images and ground truth masks to the target device
-        imgs = batch["image"].to(device, non_blocking=True)
-        gts = batch["mask"].to(device, non_blocking=True)
-        
-        # 3.2. Clear any previously calculated gradients
+        # Accept either dict-style batch or tuple/list (image, mask)
+        if isinstance(batch, dict):
+            imgs = batch.get("image")
+            gts = batch.get("mask")
+        else:
+            # assume (images, masks) or similar
+            imgs, gts = batch
+
+        imgs = imgs.to(device, non_blocking=True)
+        gts = gts.to(device, non_blocking=True)
+
         optimizer.zero_grad()
-        
-        # 3.3. Perform the forward pass using Automatic Mixed Precision (AMP)
-        # AMP helps in speeding up training and reducing memory usage on GPUs.
-        with torch.amp.autocast(device_type="cuda"):
+
+        # Use AMP only when on CUDA and scaler provided
+        if use_amp and scaler is not None:
+            with torch.amp.autocast(enabled=True):
+                logits = model(imgs)
+                loss = loss_fn(logits, gts)
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            # Standard FP32 path (CPU or no scaler)
             logits = model(imgs)
             loss = loss_fn(logits, gts)
-            
-        # 3.4. Perform the backward pass and update model weights
-        # scaler.scale() scales the loss to prevent underflow with float16 precision.
-        scaler.scale(loss).backward()
-        # scaler.step() unscales the gradients and calls optimizer.step().
-        scaler.step(optimizer)
-        # scaler.update() updates the scale for the next iteration.
-        scaler.update()
-        
-        # 3.5. Accumulate the loss for the epoch and update the progress bar
+            loss.backward()
+            optimizer.step()
+
         epoch_loss += loss.item()
         progress_bar.set_postfix(loss=loss.item())
-        
-    # 4. Calculate and return the average loss for the entire epoch
+
     return epoch_loss / len(loader)
+
 
 # ======================================================================================
 # 2. DEFINE THE EVALUATION FUNCTION
 # ======================================================================================
-def evaluate(model, loader, device, epoch_num):
+def evaluate(model, 
+            loader, 
+            device, 
+            epoch_num):
     """
     Evaluates the model on the validation set.
     
@@ -79,50 +93,45 @@ def evaluate(model, loader, device, epoch_num):
     # 1. Set the model to evaluation mode
     # This disables layers like Dropout and ensures BatchNorm uses running stats.
     model.eval()
-    
-    # 2. Initialize lists to store metrics for each batch and create a progress bar
     val_dice_scores = []
     val_acc = []
     progress_bar = tqdm(loader, desc=f"Validation E-{epoch_num}")
-    
-    # 3. Disable gradient calculations to speed up inference and reduce memory usage
-    with torch.inference_mode():
-        # 4. Iterate over each batch in the validation data
-        for batch_data in progress_bar:
-            # 4.1. Move images and ground truth masks to the target device
-            test_img = batch_data["image"].to(device, non_blocking=True)
-            test_gts = batch_data["mask"].to(device, non_blocking=True)
-            
-            # 4.2. Forward pass with AMP to get model outputs (logits)
-            with torch.amp.autocast(device_type="cuda"):
-                test_outputs = model(test_img)
-                # 4.3. Convert logits to probabilities (sigmoid) and then to a binary mask
-                preds = (torch.sigmoid(test_outputs) > 0.5).float()
-                # Ensure the ground truth is also binary for a fair comparison
-                test_gts = (test_gts > 0.5).float()
 
-            # 4.4. Calculate the Dice score for the current batch
-            # The Dice score measures the overlap between prediction and ground truth.
-            #    - Formula: (2 * |A ∩ B|) / (|A| + |B|)
-            #    - We sum over the channel, height, and width dimensions (1, 2, 3).
+    use_amp = (device is not None and getattr(device, "type", None) == "cuda")
+    with torch.inference_mode():
+        for batch_data in progress_bar:
+            if isinstance(batch_data, dict):
+                test_img = batch_data.get("image")
+                test_gts = batch_data.get("mask")
+            else:
+                test_img, test_gts = batch_data
+
+            test_img = test_img.to(device, non_blocking=True)
+            test_gts = test_gts.to(device, non_blocking=True)
+
+            # AMP only on CUDA
+            if use_amp:
+                with torch.amp.autocast(enabled=True):
+                    test_outputs = model(test_img)
+            else:
+                test_outputs = model(test_img)
+
+            preds = (torch.sigmoid(test_outputs) > 0.5).float()
+            test_gts = (test_gts > 0.5).float()
+
             intersection = (preds * test_gts).sum(dim=(1, 2, 3))
             union = preds.sum(dim=(1, 2, 3)) + test_gts.sum(dim=(1, 2, 3))
-            # Add a small epsilon (1e-6) to avoid division by zero.
             dice_per_image = (2.0 * intersection + 1e-6) / (union + 1e-6)
             batch_dice = dice_per_image.mean().item()
-            
-            # 4.5. Calculate pixel-wise accuracy for the batch
-            # Accuracy = (Correctly classified pixels) / (Total pixels)
+
             correct_pixels = (preds == test_gts).sum()
-            total_pixels = test_gts.numel() # .numel() gets the total number of elements
+            total_pixels = test_gts.numel()
             batch_accuracy = (correct_pixels / total_pixels).item()
-            
-            # 4.6. Store the metrics for this batch and update the progress bar
+
             val_dice_scores.append(batch_dice)
             val_acc.append(batch_accuracy)
             progress_bar.set_postfix(dice=batch_dice, acc=batch_accuracy)
-            
-    # 5. Calculate the average Dice and Accuracy scores across all validation batches
+
     mean_dice = sum(val_dice_scores) / len(val_dice_scores)
     mean_accuracy = sum(val_acc) / len(val_acc)
     return mean_dice, mean_accuracy
@@ -133,14 +142,14 @@ def evaluate(model, loader, device, epoch_num):
 # ======================================================================================
 def train(model,
         train_loader,
-        test_loader, 
-        loss_fn, 
-        optimizer, 
+        test_loader,
+        loss_fn,
+        optimizer,
         scheduler,
-        scaler, 
-        device = "cuda" if torch.cuda.is_available() else "cpu", 
+        scaler,
+        device = "cuda" if torch.cuda.is_available() else "cpu",
         epochs:int = 20,
-        checkpoint_dir:str = "checkpoints/ "):
+        checkpoint_dir:str = "checkpoints/"):
     """
     Coordinates the full training process over multiple epochs.
 
@@ -166,10 +175,13 @@ def train(model,
     
     # Initialize a list to store results from each epoch for later analysis or plotting
     results = []
-    
-    # Initialize a variable to track the best validation Dice score for saving the best model
     best_val_dice = 0.0
-    
+
+    # Ensure checkpoint dir exists (clean trailing spaces)
+    checkpoint_dir = checkpoint_dir.strip()
+    if checkpoint_dir:
+        os.makedirs(checkpoint_dir, exist_ok=True)
+
     # 1. Loop through the specified number of epochs
     for epoch in range(1, epochs + 1):
         print(f"\n===== Starting Epoch {epoch}/{epochs} =====")
@@ -177,19 +189,19 @@ def train(model,
         # 2. Run the training function for one epoch
         # This will update the model's weights based on the training data.
         train_loss = train_one_epoch(model,
-                                    train_loader, 
-                                    optimizer, 
-                                    loss_fn, 
-                                    scaler, 
-                                    device, 
+                                    train_loader,
+                                    optimizer,
+                                    loss_fn,
+                                    scaler,
+                                    device,
                                     epoch)
         
         # 3. Run the evaluation function on the validation set
         # This assesses the model's performance on unseen data.
-        val_dice, val_acc = evaluate(model, 
-                                    test_loader, 
-                                    device, 
-                                    epoch)
+        val_dice, val_acc = evaluate(model,
+                                     test_loader,
+                                     device,
+                                     epoch)
         
         # 4. Update the learning rate scheduler
         # Schedulers like ReduceLROnPlateau adjust the LR based on a monitored metric.
@@ -197,14 +209,15 @@ def train(model,
             # We use `1.0 - val_dice` because schedulers typically aim to *minimize* a metric.
             # Since a higher Dice score is better, minimizing (1 - Dice) is equivalent to maximizing Dice.
             scheduler.step(1.0 - val_dice)
-            
+        
         # 5. Save model checkpoints
         # Save a checkpoint for the current epoch for traceability.
-        checkpoint_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch}.pth")
-        torch.save(model.state_dict(), checkpoint_path)
+        if checkpoint_dir:
+            checkpoint_path = os.path.join(checkpoint_dir, f"model_epoch_{epoch}.pth")
+            torch.save(model.state_dict(), checkpoint_path)
 
         # Save the model if it has the best validation Dice score so far.
-        if val_dice > best_val_dice:
+        if val_dice > best_val_dice and checkpoint_dir:
             best_val_dice = val_dice
             best_model_path = os.path.join(checkpoint_dir, "best_model.pth")
             torch.save(model.state_dict(), best_model_path)
@@ -223,7 +236,8 @@ def train(model,
         print(f"  Train Loss:      {train_loss:.4f}")
         print(f"  Validation Dice:   {val_dice:.4f}")
         print(f"  Validation Acc:    {val_acc*100:.2f}%")
-        print(f"  Checkpoint saved:  {checkpoint_path}")
+        if checkpoint_path:
+            print(f"  Checkpoint saved:  {checkpoint_path}")
         print("=" * (35 + len(str(epoch)) + len(str(epochs))))
 
     # 8. Final message when training is complete
