@@ -2,25 +2,40 @@
 
 This project focuses on developing a **deep learning model** for semantic segmentation of brain tumors from MRI scans. The aim is to experiment with state-of-the-art segmentation architectures and refine them to achieve high accuracy in identifying tumor regions.
 
-### Announcement — Version 2 (v2)
-This repository now includes a second version (v2) of the segmentation pipeline. v2 focuses on transfer-learning with DeepLabV3 (ResNet-50) and pipeline improvements (see "What's new in v2" below). Work continues iteratively; training metrics for v2 will be populated here after experiments complete.
+### Announcement — Version 3 (v3)
+This repository now ships Version 3 (v3) of the segmentation pipeline. v3 focuses on state-of-the-art architecture improvements, deeper supervision, and a stronger loss/augmentation strategy to improve tumor overlap (Dice) and boundary accuracy.
 
-> The output is still not satisfying, but I’ll work on improving it further in the future.
+Highlights in v3:
+- Switched to UNet++ with a pretrained EfficientNet-B4 encoder and deep supervision.
+- Advanced combined loss (Dice+CE, Focal, Tversky) designed for class imbalance and boundary focus.
+- Rich augmentation pipeline (elastic, grid distortions, CLAHE) and robust validation preprocessing.
+- Modern training utilities: AdamW + OneCycleLR, AMP, and detailed metrics (Dice + Hausdorff).
+- Modular training/validation loops with checkpointing and inference visualization tools.
 
-### Sample Output
-![alt text](image.png)
+<details>
+<summary>History — previous versions (click to expand)</summary>
 
-## What's new in v2 (high level)
+#### Announcement — Version 2 (v2)
+This repository includes a second version (v2) of the segmentation pipeline. v2 focused on transfer-learning with DeepLabV3 (ResNet-50) and pipeline improvements. Work continues iteratively; training metrics for v2 are kept here for reference.
+
+> The output is still not satisfying, but experiments continue.
+
+##### What's new in v2 (high level)
 - Switched to `torchvision's DeepLabV3` (ResNet-50) with pretrained weights for transfer learning.
 - Adapted the model to single-channel (grayscale) MRI slices by replacing the first convolutional layer.
 - Replaced classifier and auxiliary heads to produce two output channels (background vs tumor).
-- Backbone parameters are frozen initially to speed up convergence and reduce overfitting risk.
+- Backbone parameters were frozen initially to speed up convergence and reduce overfitting risk.
 - Introduced a concise, reproducible transform pipeline for grayscale images.
 - Implemented a custom PyTorch Dataset that aligns image/mask pairs and binarizes masks.
 - Integrated MONAI's DiceLoss and DiceMetric for segmentation-specific training and evaluation.
 - Enabled Automatic Mixed Precision (AMP) and a ReduceLROnPlateau scheduler.
 - Training/validation loops are managed via a modular `going_modular.engine` for cleaner code and checkpointing.
 - Corrected the Dice score implementation to ensure it is properly calculated and bounded between 0 and 1.
+
+</details>
+
+### Sample Output
+![alt text](image.png)
 
 ## Objective
 
@@ -42,14 +57,24 @@ This project uses the [Brain Tumor Segmentation Dataset](https://www.kaggle.com/
 The workflow is documented in the notebooks:
 - `Brain_tumor_seg.ipynb` — original baseline experiments (v1).
 - `Brain_tumor_seg_V2.ipynb` — transfer-learning experiments and updated pipeline (v2).
+- `Brain_tumor_seg_V3.ipynb` — current state-of-the-art experiments (v3) using UNet++, EfficientNet encoder, deep supervision, and advanced losses/augmentations.
 
-Main steps:
-1. Data loading & preprocessing — reading, resizing, converting to grayscale, normalizing.
-2. Model definition — adapting pretrained DeepLabV3 or other architectures.
-3. Training — using Dice-based loss and optimizer/scheduler.
-4. Evaluation — computing Dice and visualizing predictions.
+Main steps (v3-focused):
+1. Data loading & preprocessing — discover aligned image/mask pairs, resize, convert to required channels, and binarize masks.
+2. Augmentation — extensive albumentations pipeline (elastic, grid distortion, CLAHE, noise) for robust training.
+3. Model definition — UNet++ with pretrained EfficientNet-B4 encoder and deep supervision heads.
+4. Loss & optimization — CombinedLoss (Dice+CE, Focal, Tversky), AdamW, OneCycleLR, AMP.
+5. Training — modular training/validation loops with checkpointing and metric tracking (Dice, Hausdorff).
+6. Evaluation & visualization — thresholded predictions, visual overlays, and per-case metric reporting.
 
-## Results (placeholders for v2)
+## Results (placeholders for v3)
+Training for v3 is in progress. Final metrics will be populated here once experiments complete.
+
+- Final Validation Accuracy: TBD (placeholder)
+- Best Dice Coefficient: TBD (placeholder)
+- Notes: v3 focuses on improving Dice overlap and boundary accuracy (Hausdorff). Metrics will be updated after completed runs; until then this section intentionally holds placeholders.
+
+## Results from v2 (historical)
 - Final Validation Accuracy: 93.67%
 - Best Dice Coefficient: 0.2617
 
