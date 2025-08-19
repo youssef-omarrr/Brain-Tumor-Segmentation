@@ -12,6 +12,8 @@ Highlights in v3:
 - Modern training utilities: AdamW + OneCycleLR, AMP, and detailed metrics (Dice + Hausdorff).
 - Modular training/validation loops with checkpointing and inference visualization tools.
 
+> **Note on Training Duration:** For optimal performance, this model architecture benefits from extensive training (e.g., 75+ epochs), which is computationally expensive. The current results are based on a 5-epoch training run to demonstrate the model's potential and validate the pipeline. The provided checkpoints and outputs should be considered a proof-of-concept rather than a fully benchmarked result.
+
 <details>
 <summary>History — previous versions (click to expand)</summary>
 
@@ -34,8 +36,15 @@ This repository includes a second version (v2) of the segmentation pipeline. v2 
 
 </details>
 
-### Sample Output
-![alt text](image.png)
+## Sample Output
+### Version one
+![alt text](imgs/image.png)
+### Version three
+![alt text](imgs/output.png)
+![alt text](imgs/image-1.png)
+![alt text](imgs/image_2.png)
+
+> Notice how much greater the model is now after 3 updates.
 
 ## Objective
 
