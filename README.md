@@ -37,14 +37,23 @@ This repository includes a second version (v2) of the segmentation pipeline. v2 
 </details>
 
 ## Sample Output
-### Version one
-![alt text](imgs/image.png)
-### Version three
+<details>
+<summary>History — previous versions (click to expand)</summary>
+
+### **Version one**
+![alt text](imgs/version_1.png)
+
+### **Version Two**
+![alt text](imgs/version_2.png)
+
+</details>
+
+### **Version three**
 ![alt text](imgs/output.png)
 ![alt text](imgs/image-1.png)
 ![alt text](imgs/image_2.png)
 
-> Notice how much greater the model is now after 3 updates.
+> It is clear how much greater version 3 is compared to the previous models.
 
 ## Objective
 

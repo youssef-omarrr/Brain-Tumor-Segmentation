@@ -88,24 +88,25 @@ with torch.no_grad():
 bin_mask = (prob > 0.5).float()
 
 # ==== PLOT ====
-fig, ax = plt.subplots(2, 2, figsize=(10, 10))
+# Binarize the original mask for consistent display
+orig_mask_binary = (np.array(orig_mask) > 127).astype(np.uint8)
 
-ax[0, 0].imshow(orig_img, cmap="gray")
-ax[0, 0].set_title("Original Image")
-ax[0, 0].axis("off")
+# Create plots
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-ax[0, 1].imshow(orig_img, cmap="gray")
-ax[0, 1].imshow(bin_mask.numpy(), alpha=0.5, cmap="Reds")
-ax[0, 1].set_title("Prediction Overlay")
-ax[0, 1].axis("off")
+axes[0].imshow(orig_img, cmap='gray')
+axes[0].set_title('Original Image')
+axes[0].axis('off')
 
-ax[1, 0].imshow(bin_mask, cmap="gray")
-ax[1, 0].set_title("Predicted Mask")
-ax[1, 0].axis("off")
+axes[1].imshow(bin_mask.numpy(), cmap='jet', alpha=0.7)
+axes[1].imshow(orig_img, cmap='gray', alpha=0.3)
+axes[1].set_title('Predicted Mask')
+axes[1].axis('off')
 
-ax[1, 1].imshow(orig_mask, cmap="gray")
-ax[1, 1].set_title("Ground Truth Mask")
-ax[1, 1].axis("off")
+axes[2].imshow(orig_mask_binary, cmap='jet', alpha=0.7)
+axes[2].imshow(orig_img, cmap='gray', alpha=0.3)
+axes[2].set_title('Ground Truth Mask')
+axes[2].axis('off')
 
 plt.tight_layout()
 plt.show()

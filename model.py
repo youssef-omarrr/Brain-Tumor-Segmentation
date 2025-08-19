@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from monai.transforms import (
     LoadImage, EnsureChannelFirst, ScaleIntensity, Resize, Compose
 )
-
+import numpy as np
 import random
 pic_number = random.randint(1, 3064)
 
@@ -37,13 +37,13 @@ preprocess = Compose([
     LoadImage(image_only=True),
     EnsureChannelFirst(),
     ScaleIntensity(),
-    Resize(spatial_size=TARGET_SIZE),  # same resize as test_transforms
+    Resize(spatial_size=TARGET_SIZE),
 ])
 
 # Load once to get original size (for back-resize)
 orig_img = LoadImage(image_only=True)(IMAGE_PATH)
 orig_mask = LoadImage(image_only=True)(MASK_PATH)
-orig_h, orig_w = orig_img.shape[:2] if orig_img.ndim == 2 else orig_img.shape[:2]
+orig_h, orig_w = orig_img.shape[:2]
 
 # ==== PREP INPUT ====
 img_t = preprocess(IMAGE_PATH)                  # C,H,W (float32 in [0,1] after scaling)
@@ -55,32 +55,31 @@ with torch.no_grad():
     prob = torch.sigmoid(logits)[0, 0].cpu()    # h,w
 bin_mask = (prob > 0.5).float()                 # h,w
 
-# ===== OPTION A: Overlay on the *resized* image used for inference =====
-img_resized = img_batch.cpu()[0, 0].numpy()     # h,w
+# ==== VISUALIZATION ====
+# Resize predicted mask back to original image size for correct overlay
+resize_back = Resize(spatial_size=(orig_h, orig_w), mode="nearest")
+# bin_mask is a (H, W) tensor, needs to be (C, H, W) for Resize
+bin_mask_resized = resize_back(bin_mask.unsqueeze(0)).squeeze(0).numpy()
 
-# ==== PLOT: Create a 2x2 grid for visualization ====
-fig, ax = plt.subplots(2, 2, figsize=(10, 10))
+# Binarize the original mask for consistent display
+orig_mask_binary = (orig_mask > 127).astype(np.uint8)
 
-# Top-left: Original Image
-ax[0, 0].imshow(orig_img, cmap="gray")
-ax[0, 0].set_title("Original Image")
-ax[0, 0].axis("off")
+# Create plots
+fig, axes = plt.subplots(1, 3, figsize=(15, 5))
 
-# Top-right: Overlay of Image + Prediction 
-ax[0, 1].imshow(img_resized, cmap="gray")
-ax[0, 1].imshow(bin_mask.numpy(), alpha=0.5, cmap="Reds")
-ax[0, 1].set_title("Prediction Overlay")
-ax[0, 1].axis("off")
+axes[0].imshow(orig_img, cmap='gray')
+axes[0].set_title('Original Image')
+axes[0].axis('off')
 
-# Bottom-left: Ground Truth Mask 
-ax[1, 0].imshow(bin_mask, cmap="gray")
-ax[1, 0].set_title("Predicted Mask")
-ax[1, 0].axis("off")
+axes[1].imshow(bin_mask_resized, cmap='jet', alpha=0.7)
+axes[1].imshow(orig_img, cmap='gray', alpha=0.3)
+axes[1].set_title('Predicted Mask')
+axes[1].axis('off')
 
-# Bottom-right: Predicted Mask
-ax[1, 1].imshow(orig_mask, cmap="gray")
-ax[1, 1].set_title("Ground Truth Mask")
-ax[1, 1].axis("off")
+axes[2].imshow(orig_mask_binary, cmap='jet', alpha=0.7)
+axes[2].imshow(orig_img, cmap='gray', alpha=0.3)
+axes[2].set_title('Ground Truth Mask')
+axes[2].axis('off')
 
 plt.tight_layout()
 plt.show()
