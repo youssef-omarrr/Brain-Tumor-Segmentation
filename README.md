@@ -85,7 +85,7 @@ Main steps (v3-focused):
 5. Training — modular training/validation loops with checkpointing and metric tracking (Dice, Hausdorff).
 6. Evaluation & visualization — thresholded predictions, visual overlays, and per-case metric reporting.
 
-## Results (placeholders for v3)
+## Results from V3
 ~~Training for v3 is in progress. Final metrics will be populated here once experiments complete.~~
 
 This version has only been trained on **5 epochs**, but it has the best outcomes compared to the other versions.
@@ -95,19 +95,19 @@ This version has only been trained on **5 epochs**, but it has the best outcomes
 - Final Hausdorff Distance: 21.0548
 - Notes: v3 focuses on improving Dice overlap and boundary accuracy (Hausdorff).
 
-## Results from v2 (historical)
+## Results from V2 (historical)
 - Final Validation Accuracy: 93.67%
 - Best Dice Coefficient: 0.2617
 
 > NOTE: In medical imaging, the feature of interest (the tumor) is often a very small percentage of the total image. A model that learns to predict everything as "background" can achieve very high pixel-wise accuracy (e.g., 98%) while completely failing at the actual task. This is why the Dice score is so important—it specifically measures the overlap of the predicted tumor with the real one.
 
-## Results from v1 (historical)
+## Results from V1 (historical)
 - **Final Validation Accuracy:** 90.81%
 - **Best Dice Coefficient:** Not reported due to a calculation error in the v1 implementation. This issue is resolved in the v2 pipeline.
 - **Summary:** The v1 experiments successfully established a U-Net baseline and a functional data pipeline. Detailed logs are available in the original `Brain_tumor_seg.ipynb` notebook for reference.
 
-## Project Status & Future Work
 
+## Project Status & Future Work
 
 This project has demonstrated baseline segmentation approaches. Next steps and ideas:
 
