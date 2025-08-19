@@ -87,11 +87,11 @@ Main steps (v3-focused):
 
 ## Results (placeholders for v3)
 ~~Training for v3 is in progress. Final metrics will be populated here once experiments complete.~~
+
 This version has only been trained on **5 epochs**, but it has the best outcomes compared to the other versions.
 
-- Final Train Loss: 0.2161
 - Final Val Loss: 0.0974
-- Final Dice Score: 0.7914
+- **Final Dice Score: 0.7914**
 - Final Hausdorff Distance: 21.0548
 - Notes: v3 focuses on improving Dice overlap and boundary accuracy (Hausdorff).
 
