@@ -2,10 +2,10 @@
 
 This project focuses on developing a **deep learning model** for semantic segmentation of brain tumors from MRI scans. The aim is to experiment with state-of-the-art segmentation architectures and refine them to achieve high accuracy in identifying tumor regions.
 
-### Announcement — Version 3 (v3)
-This repository now ships Version 3 (v3) of the segmentation pipeline. v3 focuses on state-of-the-art architecture improvements, deeper supervision, and a stronger loss/augmentation strategy to improve tumor overlap (Dice) and boundary accuracy.
+### Announcement — Version 2 (v2)
+This repository now ships Version 2 (v2) of the segmentation pipeline. v2 focuses on state-of-the-art architecture improvements, deeper supervision, and a stronger loss/augmentation strategy to improve tumor overlap (Dice) and boundary accuracy.
 
-Highlights in v3:
+Highlights in v2:
 - Switched to UNet++ with a pretrained EfficientNet-B4 encoder and deep supervision.
 - Advanced combined loss (Dice+CE, Focal, Tversky) designed for class imbalance and boundary focus.
 - Rich augmentation pipeline (elastic, grid distortions, CLAHE) and robust validation preprocessing.
@@ -17,12 +17,12 @@ Highlights in v3:
 <details>
 <summary>History — previous versions (click to expand)</summary>
 
-#### Announcement — Version 2 (v2)
-This repository includes a second version (v2) of the segmentation pipeline. v2 focused on transfer-learning with DeepLabV3 (ResNet-50) and pipeline improvements. Work continues iteratively; training metrics for v2 are kept here for reference.
+#### Announcement — Version 1 (v1)
+This repository includes a second version (v1) of the segmentation pipeline. v1 focused on transfer-learning with DeepLabV3 (ResNet-50) and pipeline improvements. Work continues iteratively; training metrics for v1 are kept here for reference.
 
 > The output is still not satisfying, but experiments continue.
 
-##### What's new in v2 (high level)
+##### What's new in v1 (high level)
 - Switched to `torchvision's DeepLabV3` (ResNet-50) with pretrained weights for transfer learning.
 - Adapted the model to single-channel (grayscale) MRI slices by replacing the first convolutional layer.
 - Replaced classifier and auxiliary heads to produce two output channels (background vs tumor).
@@ -40,20 +40,20 @@ This repository includes a second version (v2) of the segmentation pipeline. v2 
 <details>
 <summary>History — previous versions (click to expand)</summary>
 
-### **Version one**
+### **Version zero**
 ![alt text](imgs/version_1.png)
 
-### **Version Two**
+### **Version one**
 ![alt text](imgs/version_2.png)
 
 </details>
 
-### **Version three**
+### **Version two**
 ![alt text](imgs/output.png)
 ![alt text](imgs/image-1.png)
 ![alt text](imgs/image_2.png)
 
-> It is clear how much greater version 3 is compared to the previous models.
+> It is clear how much greater version 2 is compared to the previous models.
 
 ## Objective
 
@@ -73,9 +73,9 @@ This project uses the [Brain Tumor Segmentation Dataset](https://www.kaggle.com/
 ## Workflow
 
 The workflow is documented in the notebooks:
-- `Brain_tumor_seg.ipynb` — original baseline experiments (v1).
-- `Brain_tumor_seg_V2.ipynb` — transfer-learning experiments and updated pipeline (v2).
-- `Brain_tumor_seg_V3.ipynb` — current state-of-the-art experiments (v3) using UNet++, EfficientNet encoder, deep supervision, and advanced losses/augmentations.
+- `Brain_tumor_seg_V0.ipynb` — original baseline experiments (v0).
+- `Brain_tumor_seg_V1.ipynb` — transfer-learning experiments and updated pipeline (v1).
+- `Brain_tumor_seg_V2.ipynb` — current state-of-the-art experiments (v2) using UNet++, EfficientNet encoder, deep supervision, and advanced losses/augmentations.
 
 Main steps (v3-focused):
 1. Data loading & preprocessing — discover aligned image/mask pairs, resize, convert to required channels, and binarize masks.
@@ -85,8 +85,7 @@ Main steps (v3-focused):
 5. Training — modular training/validation loops with checkpointing and metric tracking (Dice, Hausdorff).
 6. Evaluation & visualization — thresholded predictions, visual overlays, and per-case metric reporting.
 
-## Results from V3
-~~Training for v3 is in progress. Final metrics will be populated here once experiments complete.~~
+## Results from V2
 
 This version has only been trained on **5 epochs**, but it has the best outcomes compared to the other versions.
 
@@ -95,16 +94,16 @@ This version has only been trained on **5 epochs**, but it has the best outcomes
 - Final Hausdorff Distance: 21.0548
 - Notes: v3 focuses on improving Dice overlap and boundary accuracy (Hausdorff).
 
-## Results from V2 (historical)
+## Results from V1 (historical)
 - Final Validation Accuracy: 93.67%
 - Best Dice Coefficient: 0.2617
 
 > NOTE: In medical imaging, the feature of interest (the tumor) is often a very small percentage of the total image. A model that learns to predict everything as "background" can achieve very high pixel-wise accuracy (e.g., 98%) while completely failing at the actual task. This is why the Dice score is so important—it specifically measures the overlap of the predicted tumor with the real one.
 
-## Results from V1 (historical)
+## Results from V0 (historical)
 - **Final Validation Accuracy:** 90.81%
 - **Best Dice Coefficient:** Not reported due to a calculation error in the v1 implementation. This issue is resolved in the v2 pipeline.
-- **Summary:** The v1 experiments successfully established a U-Net baseline and a functional data pipeline. Detailed logs are available in the original `Brain_tumor_seg.ipynb` notebook for reference.
+- **Summary:** The v1 experiments successfully established a U-Net baseline and a functional data pipeline. Detailed logs are available in the original `Brain_tumor_seg_V0.ipynb` notebook for reference.
 
 
 ## Project Status & Future Work

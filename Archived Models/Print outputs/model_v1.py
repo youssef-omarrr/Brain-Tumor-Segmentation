@@ -10,7 +10,7 @@ from PIL import Image
 import numpy as np
 
 # ==== CONFIG ====
-MODEL_PATH = "checkpoints_2/best_model.pth"
+MODEL_PATH = "checkpoints/best_modelV1.pth"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 
 # Pick random test image

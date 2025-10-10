@@ -246,7 +246,7 @@ def predict_and_visualize(model, image_path, mask_path=None, device='cuda', thre
 
 model = BrainTumorSegmentationModel()
 
-checkpoint = torch.load("checkpoints_3/best_model.pth", map_location="cuda")
+checkpoint = torch.load("checkpoints/best_modelV2.pth", map_location="cuda")
 model.load_state_dict(checkpoint['model_state_dict'])
 model.to("cuda")
 
