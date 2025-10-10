@@ -2,19 +2,22 @@
 
 This document summarizes the three archived model versions (`v0`, `v1`, `v2`) that preceded the current pipeline. It explains architecture differences, training choices, measured results, and the lessons learned from each iteration. Use this as a quick reference when inspecting old experiments or deciding what to carry forward into `v3`.
 
-> These archived models were developed early in my workflow before I had experience in organizing code and experiments. 
-> 
-> Each version is implemented as a **single notebook** that contains dataset creation, model definition, training loop, and evaluation all in one place, useful for quick experiments but not modular or reproducible. 
-> 
-> For **v3** I plan to reorganize the project into clear folders and separate modules and split responsibilities (dataset, model, training, utils) so the codebase is easier to maintain, reproduce, and extend.
+> - These archived models were developed early in my workflow before I had experience in organizing code and experiments. 
+> - Each version is implemented as a **single notebook** that contains dataset creation, model definition, training loop, and evaluation all in one place, useful for quick experiments but not modular or reproducible. 
+> - For **v3** I plan to reorganize the project into clear folders and separate modules and split responsibilities (dataset, model, training, utils) so the codebase is easier to maintain, reproduce, and extend.
 
 ---
 
 ## TLDR: which is which
 
 - **v0**: baseline experiments: vanilla **U-Net**, basic pipeline, established data / notebook structure.
+![alt text](../imgs/version_1.png)
 - **v1**: transfer-learning experiments: **DeepLabV3 (ResNet-50)** adapted for grayscale input, more stable training tools.
+![alt text](../imgs/version_2.png)
 - **v2**: best archived model: **UNet++ with pretrained EfficientNet-B4 encoder**, deep supervision, advanced loss and augmentations.
+![alt text](../imgs/output.png)
+![alt text](../imgs/image-1.png)
+![alt text](../imgs/image_2.png)
 
 ---
 ## Version-by-version breakdown
