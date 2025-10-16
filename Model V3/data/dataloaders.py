@@ -4,8 +4,8 @@ from torch.utils.data import Subset, DataLoader
 
 def create_dataloaders(
                     imgs_dir:str,
-                    mask_dir:str,
-                    batch_size:int = 8,
+                    masks_dir:str,
+                    batch_size:int = 4,
                     train_split:int = 0.8,
                     img_size:tuple = (512, 512),
                     random_seed:int = 42):
@@ -14,7 +14,7 @@ def create_dataloaders(
 
     Args:
         imgs_dir (str): Path to images.
-        mask_dir (str): Path to masks.
+        masks_dir (str): Path to masks.
         batch_size (int): Batch size. Default is 8.
         train_split (float): Train/val split ratio. Default is 0.8.
         img_size (tuple): Resize shape. Default is (512, 512).
@@ -28,7 +28,7 @@ def create_dataloaders(
     # This still scans the directory twice but is necessary to assign different transforms.
     train_dataset = TumorDataset(
         imgs_dir=imgs_dir,
-        mask_dir=mask_dir,
+        masks_dir=masks_dir,
         
         transform=train_transforms(),
         img_size=img_size
@@ -36,7 +36,7 @@ def create_dataloaders(
     
     val_dataset = TumorDataset( # using the default transforms
         imgs_dir=imgs_dir,
-        mask_dir=mask_dir,
+        masks_dir=masks_dir,
         
         img_size=img_size
     )

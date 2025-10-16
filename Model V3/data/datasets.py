@@ -20,14 +20,14 @@ class TumorDataset(Dataset):
     # ---------------
     def __init__(self,
                 imgs_dir:str,
-                mask_dir:str,
+                masks_dir:str,
                 transform = None,
                 img_size: tuple= (512, 512)):
         super().__init__()
         
         # 1. init paths and params
         self.img_dir = Path(imgs_dir)
-        self.mask_dir = Path(mask_dir)
+        self.masks_dir = Path(masks_dir)
         self.img_size = img_size
         
         # 2.1. init default transform (concats the custom transform with the default one)
@@ -63,12 +63,12 @@ class TumorDataset(Dataset):
         self.valid_files = []
         
         for img_path in self.img_files:
-            mask_path = self.mask_dir/img_path.name # *the mask and image should have the same name for this to work
+            mask_path = self.masks_dir/img_path.name # *the mask and image should have the same name for this to work
             
             if mask_path.exists():
                 self.valid_files.append(img_path)
                 
-        print (f"Found {len(self.valid_files)} vaild img-mask pairs out of {len(self.img_files)}")
+        # print (f"Found {len(self.valid_files)/len(self.img_files)} vaild img-mask pairs.")
         
     
     # get len function
@@ -82,7 +82,7 @@ class TumorDataset(Dataset):
     def __getitem__(self, idx):
         # 1. Load paths 
         img_path = self.valid_files[idx]
-        mask_path = self.mask_dir / img_path.name
+        mask_path = self.masks_dir / img_path.name
         
         # 2. Load imgs as grayscale (1 - channel)
         img = Image.open(img_path).convert('L')
@@ -134,33 +134,27 @@ def train_transforms():
         A.HorizontalFlip(p=0.5),
         A.VerticalFlip(p=0.5),
         A.Transpose(p=0.5),
-        A.ShiftScaleRotate(
-            shift_limit=0.0625,
-            scale_limit=0.1,
-            rotate_limit=15,
-            border_mode= BORDER_CONSTANT, # Fill new pixels with a constant value
-            value = 0,
-            mask_value = 0,
-            p = 0.5
+        A.Affine( # new version of 'ShiftScaleRotate'
+            translate_percent=0.0625,   # same as shift_limit
+            scale=(0.9, 1.1),           # equivalent to scale_limit=0.1
+            rotate=(-15, 15),           # same as rotate_limit
+            fit_output=False,           # same as keeping image size fixed
+            p=0.5
         ),
+
         
         # 2. non-rigid (elastic) trans
         # ------------------------------
         A.ElasticTransform(
             alpha= 1,
             sigma=50,
-            alpha_affine = 50,
             border_mode= BORDER_CONSTANT,
-            value = 0,
-            mask_value = 0,
             p = 0.3 
         ),
         A.GridDistortion(
             num_steps=5,
             distort_limit=0.3,
             border_mode= BORDER_CONSTANT,
-            value = 0,
-            mask_value = 0,
             p = 0.3 
         ),
         
@@ -179,7 +173,8 @@ def train_transforms():
         # 4. noise and blurring
         # ----------------------
         A.GaussNoise(
-            var_limit=(10.0, 50.0),
+            std_range=(0.05, 0.1),  # equivalent strength; range as a fraction of max value
+            mean_range=(0.0, 0.0),  # keep mean centered
             p=0.3
         ),
         A.GaussianBlur(
@@ -192,7 +187,7 @@ def train_transforms():
         # CLAHE is highly effective for enhancing local contrast in medical images.
         A.CLAHE(
             clip_limit=2.0,
-            title_grid_size= (8,8),
+            tile_grid_size= (8,8),
             p=0.3
         ),
         
