@@ -16,10 +16,14 @@ To train the model on a new dataset, simply update the dataset directory in the 
 > Each notebook there contains the full model, dataset setup, and training process for comparison.
 
 ### Model 3 outputs:
+![alt text](imgs/image3.png)
+![alt text](imgs/image3-1.png)
+![alt text](imgs/image3-2.png)
 
-![alt text](imgs/Figure_3.png)
-![alt text](imgs/Figure_1.png)
-![alt text](imgs/Figure_2.png)
+### Metrics
+- Average validation losses = **0.287**
+- Dice Score: **0.7582**
+- Hausdorff Distance: **39.5141**
 
 ## Objective
 
@@ -27,17 +31,17 @@ The main goal is to design a model that can **accurately segment tumor regions**
 
 Version 3 focuses on:
 
-* Modular, reproducible code.
-* Dataset-agnostic pipeline design.
-* Improved augmentation and loss handling.
-* Easier visualization and experimentation.
+- Modular, reproducible code.
+- Dataset-agnostic pipeline design.
+- Improved augmentation and loss handling.
+- Easier visualization and experimentation.
 
 ## Dataset
 
 This project originally used two Brain Tumor Segmentation Datasets:
 
-* [Brain Tumor Segmentation, by Nikhil Tomar](https://www.kaggle.com/datasets/nikhilroxtomar/brain-tumor-segmentation?select=images)
-* [Brain Tumor Segmentation Dataset, by Zarin Usha Shams](https://www.kaggle.com/datasets/zarinushashams/brain-tumor-segmentation-dataset?resource=download)
+- [Brain Tumor Segmentation, by Nikhil Tomar](https://www.kaggle.com/datasets/nikhilroxtomar/brain-tumor-segmentation?select=images)
+- [Brain Tumor Segmentation Dataset, by Zarin Usha Shams](https://www.kaggle.com/datasets/zarinushashams/brain-tumor-segmentation-dataset?resource=download)
 
 Both provide paired MRI images and binary masks (tumor vs background), totaling **6,814** (image, mask) pairs.
 

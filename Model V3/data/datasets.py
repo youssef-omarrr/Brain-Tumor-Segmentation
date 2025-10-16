@@ -57,7 +57,9 @@ class TumorDataset(Dataset):
             
         
         # 3. get all the images in the img_dir 
-        self.img_files = sorted ( list(self.img_dir.glob("*.png")) )
+        self.img_files = sorted(
+            [p for p in self.img_dir.iterdir() if p.suffix.lower() in [".png", ".jpg", ".jpeg"]]
+        )
         
         # 4. make sure every img file has a corresponding mask file
         self.valid_files = []

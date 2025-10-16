@@ -92,7 +92,7 @@ def train(model,
         print("-"*35)
         
         # 5. train
-        train_loss, train_step_losses = train_one_epoch(
+        train_loss = train_one_epoch(
             model,
             train_dataloader,
             loss_fn,
@@ -103,7 +103,7 @@ def train(model,
         )
         
         # 6. validate
-        val_loss, dice_score, hausdorff_dist, val_step_losses = validate(
+        val_loss, dice_score, hausdorff_dist = validate(
             model,
             val_dataloader,
             loss_fn,
@@ -135,4 +135,3 @@ def train(model,
         print("="*35, "\n")
         
         
-    return train_step_losses, val_step_losses

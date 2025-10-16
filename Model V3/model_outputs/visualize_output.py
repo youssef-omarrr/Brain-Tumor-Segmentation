@@ -30,7 +30,7 @@ def visualize_random_prediction(model, images_dir, masks_dir=None, device="cuda"
         device: "cuda" or "cpu".
         threshold: Probability cutoff for mask.
     """
-    model.eval()
+    model.eval().to(device)
 
     # Pick random image
     image_files = sorted(list(Path(images_dir).glob("*.png")))
@@ -54,12 +54,11 @@ def visualize_random_prediction(model, images_dir, masks_dir=None, device="cuda"
 
     # Predict
     with torch.inference_mode():
-        with torch.amp.autocast(device_type=device):
-            output = model(input_tensor)
-            if isinstance(output, dict):
-                output = output['main']
-            probs = torch.softmax(output, dim=1)
-            pred_mask = (probs[0, 1] > threshold).cpu().numpy()
+        output = model(input_tensor)
+        if isinstance(output, dict):
+            output = output['main']
+        probs = torch.softmax(output, dim=1)
+        pred_mask = (probs[0, 1] > threshold).cpu().numpy()
 
     # Plot results
     n_cols = 3 if mask_path and mask_path.exists() else 2

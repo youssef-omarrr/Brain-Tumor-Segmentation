@@ -1,6 +1,9 @@
 from tqdm import tqdm
 import torch
 from torch import amp
+import monai
+from monai.metrics import DiceMetric, HausdorffDistanceMetric
+
 
 # Training function loop for each epoch
 # ---------------------------------------
@@ -14,7 +17,6 @@ def train_one_epoch(model,
     # 0. put model in train mode and init total losses
     model.train()
     total_losses = 0
-    step_losses = []
     
     # 1. loop through train_dataloader
     pbar = tqdm(train_dataloader,
@@ -34,7 +36,6 @@ def train_one_epoch(model,
             
             # 5. calculate the loss
             loss = loss_fn(logits, masks)
-            step_losses.append(loss.item())
             
             # 6. zero grad
             optim.zero_grad()
@@ -56,8 +57,8 @@ def train_one_epoch(model,
             'LR': f'{scheduler.get_last_lr()[0]:.6f}'
         })
         
-    # 11. return average loss and step losses
-    return total_losses/(len(train_dataloader)), step_losses
+    # 11. return average loss
+    return total_losses/(len(train_dataloader))
 
 
 
@@ -75,7 +76,6 @@ def validate(model,
     
     # 0.0. init losses and reset metrics
     total_losses = 0
-    step_losses = []
     metric['dice'].reset()
     metric['hausdorff'].reset()
     
@@ -98,7 +98,6 @@ def validate(model,
                 
                 # 5. calculate the loss
                 loss = loss_fn(logits, masks)
-                step_losses.append(loss.item())
             
             # 6. compute total losses
             total_losses += loss.item()
@@ -115,6 +114,10 @@ def validate(model,
                 # multiclass: argmax -> [B, H, W], then add channel dim -> [B, 1, H, W]
                 preds = torch.argmax(probs, dim=1).unsqueeze(1).long()
             
+            # Skip Empty Masks in Evaluation
+            if torch.sum(masks) == 0 and torch.sum(preds) == 0:
+                continue
+            
             # 8. update metrics directly (MONAI handles one-hot internally)
             metric['dice'](preds, masks)
             metric['hausdorff'](preds, masks)
@@ -125,8 +128,12 @@ def validate(model,
             })
             
     # 8. get the final dice_score and hausdorff_distamce
-    dice_score = metric['dice'].aggregate().item() 
-    hausdorff_dist = metric['hausdorff'].aggregate().item() 
+    dice_score = metric['dice'].aggregate()
+    hausdorff_vals = metric['hausdorff'].aggregate()
+
+    dice_score = torch.nanmean(dice_score).item()
+    hausdorff_dist = torch.nanmean(hausdorff_vals).item()
+
         
     # 9. return average loss, dice score, and hausdorff distance
-    return total_losses/(len(val_dataloader)), dice_score, hausdorff_dist, step_losses
+    return total_losses/(len(val_dataloader)), dice_score, hausdorff_dist

@@ -72,5 +72,8 @@ def create_dataloaders(
     
     print(f"Train dataset size: {len(train_subset)}")
     print(f"Validation dataset size: {len(val_subset)}")
+    print('-'*35)
+    print(f"Train dataloader size: {len(train_dataloader)}")
+    print(f"Validation dataloader size: {len(val_dataloader)}")
     
     return train_dataloader, val_dataloader
