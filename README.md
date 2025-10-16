@@ -48,10 +48,10 @@ Model V3/
 ## Future Work
 
 
-* [x] Archive previous versions for comparison.
-* [x] Improve boundary precision (e.g., boundary loss, architectural tweaks).
-* [ ] Finish modular v3 implementation.
-* [ ] Deploy the model on Hugging Face or another hosting service.
-* [ ] Cross-dataset validation to evaluate generalization..
-* [ ] Consider `Attention U-Net` or `Swin-UNet` for future experiments.
+- [x] Archive previous versions for comparison.
+- [x] Improve boundary precision (e.g., boundary loss, architectural tweaks).
+- [x] Finish modular v3 implementation.
+- [ ] Deploy the model on Hugging Face or another hosting service.
+- [ ] Cross-dataset validation to evaluate generalization..
+- [ ] Consider `Attention U-Net` or `Swin-UNet` for future experiments.
 
