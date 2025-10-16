@@ -68,7 +68,7 @@ class TumorDataset(Dataset):
             if mask_path.exists():
                 self.valid_files.append(img_path)
                 
-        # print (f"Found {len(self.valid_files)/len(self.img_files)} vaild img-mask pairs.")
+        # print (f"Found {len(self.valid_files)}/{len(self.img_files)} vaild img-mask pairs.")
         
     
     # get len function

@@ -1,35 +1,47 @@
 # Brain Tumor Segmentation
 
-This project focuses on developing a **deep learning model** for *semantic segmentation* of brain tumors from MRI scans. The goal is to experiment with different segmentation architectures, loss functions, and training setups to accurately detect and segment tumor regions.
+This project focuses on developing a **deep learning model** for *semantic segmentation* of brain tumors from MRI scans. The goal is to experiment with different segmentation architectures, loss functions, and training setups to accurately detect and segment tumor regions.
 
-## Version 3 (Work in Progress)
+## Version 3 (Completed)
 
-Version 3 (v3) is currently under development.
-- It will build on the already **working and high-performing v2**, which achieved strong segmentation results and clean visual outputs.  
-- The new version will focus on **better organization and modularity**, with separate folders for models, training, datasets, and utilities to make the pipeline easier to extend and reproduce.
+Version 3 (v3) is now **fully implemented**.
 
-> If you want to check out the earlier versions (v0, v1, v2), their architectures, comparisons, and output results, see the **`archived_models/`** folder.
-> Each archived notebook contains the complete model, dataset setup, and training process.
+It builds on the already **high-performing v2**, which produced strong segmentation results and clean visual outputs.
 
-### Model 2 outputs:
+The new version features **highly optimized, modular, and reproducible pipeline**, making it significantly faster in training and much easier to reproduce or adapt for **any MRI segmentation problem**, not just brain tumors.
+
+To train the model on a new dataset, simply update the dataset directory in the training pipeline (`Model V3/train.ipynb`).
+
+> You can find earlier versions (v0, v1, v2) in the **`archived_models/`** folder.
+> Each notebook there contains the full model, dataset setup, and training process for comparison.
+
+### Model 3 outputs:
+
 ![alt text](imgs/Figure_3.png)
 ![alt text](imgs/Figure_1.png)
 ![alt text](imgs/Figure_2.png)
 
-
 ## Objective
 
-The main goal is to design a model that can **accurately segment brain tumor regions** while maintaining robust generalization across different scans.
-#### Future work in v3 focuses on:
-* Better data preprocessing and augmentation.
-* Cleaner modular code structure.
-* Improved training stability and loss design.
+The main goal is to design a model that can **accurately segment tumor regions** in MRI images while maintaining robust generalization across different medical datasets.
+
+Version 3 focuses on:
+
+* Modular, reproducible code.
+* Dataset-agnostic pipeline design.
+* Improved augmentation and loss handling.
+* Easier visualization and experimentation.
 
 ## Dataset
 
-This project uses the [Brain Tumor Segmentation Dataset](https://www.kaggle.com/datasets/nikhilroxtomar/brain-tumor-segmentation?select=images), which includes paired MRI images and binary masks (tumor vs background).
+This project originally used two Brain Tumor Segmentation Datasets:
 
-## Project Structure (v3 goal)
+* [Brain Tumor Segmentation, by Nikhil Tomar](https://www.kaggle.com/datasets/nikhilroxtomar/brain-tumor-segmentation?select=images)
+* [Brain Tumor Segmentation Dataset, by Zarin Usha Shams](https://www.kaggle.com/datasets/zarinushashams/brain-tumor-segmentation-dataset?resource=download)
+
+Both provide paired MRI images and binary masks (tumor vs background), totaling **6,814** (image, mask) pairs.
+
+## Project Structure (v3)
 
 ```
 Model V3/
@@ -43,15 +55,18 @@ Model V3/
  │   └─ losses.py
  ├─ model outputs/
  │   └─ visualize_output.py
+ ├─ train.ipynb
+ └─ model.py
 ```
 
-## Future Work
-
+## Next Steps
 
 - [x] Archive previous versions for comparison.
-- [x] Improve boundary precision (e.g., boundary loss, architectural tweaks).
-- [x] Finish modular v3 implementation.
-- [ ] Deploy the model on Hugging Face or another hosting service.
-- [ ] Cross-dataset validation to evaluate generalization..
-- [ ] Consider `Attention U-Net` or `Swin-UNet` for future experiments.
+- [x] Improve boundary precision (boundary loss, architecture tweaks).
+- [x] Implement modular v3 pipeline.
+- [x] Make v3 dataset-agnostic for any MRI segmentation.
+- [ ] Deploy the model on Hugging Face or another platform.
+- [x] Perform cross-dataset validation to test generalization.
+- [ ] Explore `Attention U-Net` and `Swin-UNet` architectures in future work.
+
 
