@@ -14,13 +14,14 @@ def train_one_epoch(model,
     # 0. put model in train mode and init total losses
     model.train()
     total_losses = 0
+    step_losses = []
     
     # 1. loop through train_dataloader
-    pbar = tqdm(enumerate(train_dataloader),
+    pbar = tqdm(train_dataloader,
                 total=len(train_dataloader),
                 desc="Training...")
 
-    for batch_idx, batch in pbar:
+    for batch in pbar:
         
         # 2. move data to device
         imgs = batch['image'].to(device)
@@ -33,6 +34,7 @@ def train_one_epoch(model,
             
             # 5. calculate the loss
             loss = loss_fn(logits, masks)
+            step_losses.append(loss.item())
             
             # 6. zero grad
             optim.zero_grad()
@@ -54,8 +56,8 @@ def train_one_epoch(model,
             'LR': f'{scheduler.get_last_lr()[0]:.6f}'
         })
         
-    # 11. return average loss
-    return total_losses/(len(train_dataloader))
+    # 11. return average loss and step losses
+    return total_losses/(len(train_dataloader)), step_losses
 
 
 
@@ -68,24 +70,26 @@ def validate(model,
             metric,
             device):
     
-    # 0. put model in evaluation mode and init total losses
+    # 0. put model in evaluation mode
     model.eval()
+    
+    # 0.0. init losses and reset metrics
     total_losses = 0
+    step_losses = []
+    metric['dice'].reset()
+    metric['hausdorff'].reset()
     
     # 1. loop through val_dataloader
     with torch.inference_mode():
-        pbar = tqdm(enumerate(val_dataloader),
+        pbar = tqdm(val_dataloader,
                     total=len(val_dataloader),
-                    desc="Testting...")
+                    desc="Testing...")
         
-        for batch_idx, batch in pbar:
+        for batch in pbar:
             
             # 2. move data to device and reset metrics (start fresh)
             imgs = batch['image'].to(device)
             masks = batch['mask'].to(device)
-            
-            metric['dice'].reset()
-            metric['hausdorff'].reset()
 
             # 3. enable auto mixed precision (AMP) for efficiency
             with amp.autocast(device_type= device):
@@ -94,16 +98,20 @@ def validate(model,
                 
                 # 5. calculate the loss
                 loss = loss_fn(logits, masks)
+                step_losses.append(loss.item())
             
             # 6. compute total losses
             total_losses += loss.item()
             
             # 7. convert logits -> discrete predictions with consistent shape
-            probs = torch.softmax(logits, dim=1)
-            if probs.shape[1] == 1:
+            if logits.shape[1] == 1:
+                # sigmoid for binary
+                probs = torch.sigmoid(logits)
                 # binary: keep shape [B, 1, H, W]
                 preds = (probs > 0.5).long() 
             else:
+                # softmax for multi-class
+                probs = torch.softmax(logits, dim=1)
                 # multiclass: argmax -> [B, H, W], then add channel dim -> [B, 1, H, W]
                 preds = torch.argmax(probs, dim=1).unsqueeze(1).long()
             
@@ -121,4 +129,4 @@ def validate(model,
     hausdorff_dist = metric['hausdorff'].aggregate().item() 
         
     # 9. return average loss, dice score, and hausdorff distance
-    return total_losses/(len(val_dataloader)), dice_score, hausdorff_dist
+    return total_losses/(len(val_dataloader)), dice_score, hausdorff_dist, step_losses

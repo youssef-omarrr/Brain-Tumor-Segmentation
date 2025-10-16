@@ -37,7 +37,7 @@ def train(model,
         
         pct_start=0.3,         # Percentage of the cycle spent increasing the LR.
         div_factor=25,         # Determines the initial LR (max_lr / div_factor).
-        final_div_factor=1e4,  # Determines the minimum LR (initial_lr / final_div_factor).
+        final_div_factor=100,  # Determines the minimum LR (initial_lr / final_div_factor).
         anneal_strategy='cos'  # Use a cosine annealing strategy for the decay phase.
     )
     
@@ -76,9 +76,11 @@ def train(model,
             model.load_state_dict(checkpoint['model_state_dict'])
             #load optimizer and scheduler
             optim.load_state_dict(checkpoint['optim_state_dict'])
-            scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
             
-            print(f"Loaded pretrained model:\n- val_loss={checkpoint['val_loss']:.4f}\n- dice_loss={checkpoint['dice_loss']}\n- hausdorff_dist={checkpoint['hausdorff_dist']}")
+            print(f"Loaded pretrained model:")
+            print(f"- val_loss={checkpoint['val_loss']:.4f}")
+            print(f"- dice_loss={checkpoint['dice_score']:.4f}")
+            print(f"- hausdorff_dist={checkpoint['hausdorff_dist']:.4f}")
             
         else:
             print(f"[WARNING] load_pretrained path was provided but does not exist: {load_pretrained}")
@@ -90,7 +92,7 @@ def train(model,
         print("-"*35)
         
         # 5. train
-        train_loss = train_one_epoch(
+        train_loss, train_step_losses = train_one_epoch(
             model,
             train_dataloader,
             loss_fn,
@@ -101,7 +103,7 @@ def train(model,
         )
         
         # 6. validate
-        val_loss, dice_score, hausdorff_dist = validate(
+        val_loss, dice_score, hausdorff_dist, val_step_losses = validate(
             model,
             val_dataloader,
             loss_fn,
@@ -115,7 +117,6 @@ def train(model,
         torch.save({
             'model_state_dict': model.state_dict(),
             'optim_state_dict': optim.state_dict(),
-            'scheduler_state_dict':scheduler.state_dict(),
             
             'val_loss': val_loss,
             'dice_score': dice_score,
@@ -132,3 +133,6 @@ def train(model,
         print(f"Dice Score: {dice_score:.4f}") 
         print(f"Hausdorff Distance: {hausdorff_dist:.4f}") 
         print("="*35, "\n")
+        
+        
+    return train_step_losses, val_step_losses
